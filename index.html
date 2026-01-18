@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Uploader - Dashboard Sync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-2 text-center text-gray-800">Upload to Album</h1>
+        <p class="text-xs text-center text-gray-500 mb-6">Target Album: <span class="font-mono bg-gray-100 px-1 rounded">DIt3l</span></p>
+        
+        <div class="space-y-4">
+            <input type="file" id="imageInput" accept="image/*" 
+                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"/>
+            
+            <button onclick="uploadImage()" id="uploadBtn"
+                    class="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition shadow-sm">
+                Upload to Proxy
+            </button>
+        </div>
+
+        <div id="result" class="mt-6 hidden border-t pt-6">
+            <div class="flex justify-between items-center mb-2">
+                <p class="text-sm font-semibold text-gray-700">Upload Successful!</p>
+                <span class="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded uppercase font-bold">Data Logged to Console</span>
+            </div>
+            
+            <label class="text-xs text-gray-500">Direct Link:</label>
+            <input type="text" id="imageUrl" readonly class="w-full mt-1 p-2 border rounded bg-gray-50 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400">
+            
+            <div class="mt-4 relative group">
+                <p class="text-xs text-gray-500 mb-1">Preview:</p>
+                <img id="preview" class="rounded-lg w-full shadow-sm border" src="" alt="Uploaded Preview">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function uploadImage() {
+            const fileInput = document.getElementById('imageInput');
+            const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('uploadBtn');
+            const previewImg = document.getElementById('preview');
+            const urlInput = document.getElementById('imageUrl');
+
+            if (!fileInput.files[0]) return alert("Please select an image");
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+            resultDiv.classList.add('hidden');
+
+            try {
+                const PROXY_URL = 'https://solid-waddle-q77p47xxvrx5h9xgx-5000.app.github.dev/upload';
+                
+                const response = await fetch(PROXY_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // --- THE CONSOLE LOG YOU REQUESTED ---
+                console.log("Full API Response Data:", data);
+
+                if (data.status_code === 200) {
+                    resultDiv.classList.remove('hidden');
+                    
+                    // Display the direct image URL
+                    urlInput.value = data.image.url;
+                    
+                    // Update the preview image
+                    previewImg.src = data.image.url;
+
+                    console.log("Image successfully uploaded to album!");
+                } else {
+                    alert("Upload failed: " + (data.error || "Check console for details"));
+                }
+            } catch (err) {
+                console.error("Connection Error:", err);
+                alert("Could not connect to backend. 1. Check if Flask is running. 2. Ensure Port 5000 is set to PUBLIC in the Ports tab.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Upload to Proxy";
+            }
+        }
+    </script>
+</body>
+</html>
